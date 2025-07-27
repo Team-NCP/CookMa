@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RecipeInputView: View {
-    @StateObject private var recipeService = RecipeService()
+    @StateObject private var recipeService = BackendRecipeService()
     @State private var youtubeURL = ""
     @State private var servingSize = 4
     @State private var showingIngredientReview = false
@@ -63,7 +63,7 @@ struct RecipeInputView: View {
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
             
-            Text("Convert YouTube cooking videos into interactive, voice-guided recipes")
+            Text("Convert YouTube cooking videos into interactive, voice-guided recipes (powered by Railway backend)")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

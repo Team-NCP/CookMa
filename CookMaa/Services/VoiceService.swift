@@ -8,26 +8,146 @@
 import Foundation
 import Speech
 import AVFoundation
+// import PipecatClientIOS - Uncomment when SPM dependencies are added
 
 @MainActor
 class VoiceService: NSObject, ObservableObject {
     @Published var isListening = false
     @Published var recognizedText = ""
     @Published var error: VoiceError?
+    @Published var isConnectedToPipecat = false
+    @Published var botResponse = ""
     
+    // Native iOS Speech Recognition (fallback)
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
     
+    // Pipecat Integration
+    // private var pipecatClient: RTVIClient? - Uncomment when dependencies added
+    private var usePipecat = false // Toggle between native and Pipecat
+    
+    // Current recipe context for voice interactions
+    private var currentRecipe: Recipe?
+    private var currentStepIndex: Int = 0
+    
     override init() {
         super.init()
         setupSpeechRecognizer()
+        // setupPipecatClient() - Uncomment when dependencies added
+    }
+    
+    // MARK: - Recipe Context Management
+    func setCurrentRecipe(_ recipe: Recipe, stepIndex: Int = 0) {
+        currentRecipe = recipe
+        currentStepIndex = stepIndex
+        print("🎯 Voice context set: \(recipe.title), step \(stepIndex + 1)")
+    }
+    
+    func getCurrentStep() -> CookingStep? {
+        guard let recipe = currentRecipe,
+              currentStepIndex < recipe.steps.count else { return nil }
+        return recipe.steps[currentStepIndex]
+    }
+    
+    func moveToNextStep() -> CookingStep? {
+        guard let recipe = currentRecipe else { return nil }
+        currentStepIndex = min(currentStepIndex + 1, recipe.steps.count - 1)
+        return getCurrentStep()
     }
     
     private func setupSpeechRecognizer() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         speechRecognizer?.delegate = self
+    }
+    
+    // MARK: - Pipecat Integration (Future Implementation)
+    private func setupPipecatClient() {
+        // TODO: Implement when Pipecat dependencies are added
+        /*
+        let clientConfig = [
+            ServiceConfig(
+                service: "llm",
+                options: [
+                    Option(name: "model", value: .string("gemini-1.5-flash")),
+                    Option(name: "messages", value: .array([
+                        .object([
+                            "role": .string("system"),
+                            "content": .string(buildCookingSystemPrompt())
+                        ])
+                    ]))
+                ]
+            ),
+            ServiceConfig(
+                service: "tts",
+                options: [
+                    Option(name: "voice", value: .string("multilingual-cooking-assistant"))
+                ]
+            )
+        ]
+        
+        let options = RTVIClientOptions(
+            enableMic: true,
+            params: RTVIClientParams(
+                baseUrl: Bundle.main.infoDictionary?["PIPECAT_API_URL"] as? String ?? "",
+                config: clientConfig
+            )
+        )
+        
+        pipecatClient = RTVIClient(
+            transport: DailyTransport(options: options),
+            options: options
+        )
+        */
+    }
+    
+    private func buildCookingSystemPrompt() -> String {
+        guard let recipe = currentRecipe else {
+            return "You are Kukma, a helpful cooking assistant. Respond naturally and provide cooking guidance."
+        }
+        
+        let currentStep = getCurrentStep()
+        let stepInfo = currentStep != nil ? "Current step: \(currentStep!.instruction)" : "No current step"
+        
+        return """
+        You are Kukma, an expert cooking assistant helping with the recipe: \(recipe.title).
+        
+        \(stepInfo)
+        
+        Recipe context:
+        - Cuisine: \(recipe.cuisine ?? "Unknown")
+        - Servings: \(recipe.servings)
+        - Difficulty: \(recipe.difficulty.rawValue)
+        - Total time: \(recipe.totalTimeFormatted)
+        
+        Chef's wisdom: \(recipe.chefsWisdom ?? "No additional notes")
+        
+        Respond conversationally and naturally. For step instructions, be detailed and encouraging. 
+        Always consider the current cooking context and step when responding.
+        
+        Handle these voice commands naturally:
+        - "Hey Kukma, next step" - Move to next step and explain
+        - "Hey Kukma, repeat that" - Repeat current step
+        - "Hey Kukma, I have a question" - Ready for cooking questions
+        - "Hey Kukma, how long should this take?" - Provide timing info
+        """
+    }
+    
+    func connectToPipecat() async {
+        // TODO: Implement when Pipecat dependencies are added
+        /*
+        do {
+            try await pipecatClient?.start()
+            isConnectedToPipecat = true
+            usePipecat = true
+            print("🎤 Connected to Pipecat voice pipeline")
+        } catch {
+            print("❌ Failed to connect to Pipecat: \(error)")
+            error = VoiceError.pipecatConnectionFailed(error.localizedDescription)
+            usePipecat = false
+        }
+        */
     }
     
     func requestPermissions() async -> Bool {
@@ -160,19 +280,96 @@ class VoiceService: NSObject, ObservableObject {
     }
     
     private func handleNextStepCommand() {
+        guard let nextStep = moveToNextStep() else {
+            speakResponse("You've completed all the steps! Your dish is ready to serve.")
+            return
+        }
+        
+        let response = generateStepResponse(nextStep)
+        speakResponse(response)
         NotificationCenter.default.post(name: .voiceCommandReceived, object: VoiceCommand.nextStep)
     }
     
     private func handleRepeatCommand() {
+        guard let currentStep = getCurrentStep() else {
+            speakResponse("No current step to repeat. Say 'Hey Kukma, next step' to continue.")
+            return
+        }
+        
+        let response = generateStepResponse(currentStep, isRepeat: true)
+        speakResponse(response)
         NotificationCenter.default.post(name: .voiceCommandReceived, object: VoiceCommand.repeat)
     }
     
     private func handleQuestionCommand() {
+        speakResponse("I'm here to help! What's your cooking question? I can see what you're working on.")
         NotificationCenter.default.post(name: .voiceCommandReceived, object: VoiceCommand.question)
     }
     
     private func handleTimingCommand() {
+        guard let currentStep = getCurrentStep() else {
+            speakResponse("No active cooking step right now.")
+            return
+        }
+        
+        let timingResponse = generateTimingResponse(currentStep)
+        speakResponse(timingResponse)
         NotificationCenter.default.post(name: .voiceCommandReceived, object: VoiceCommand.timing)
+    }
+    
+    // MARK: - Response Generation
+    private func generateStepResponse(_ step: CookingStep, isRepeat: Bool = false) -> String {
+        let prefix = isRepeat ? "Let me repeat that step. " : "Next, "
+        var response = "\(prefix)\(step.instruction)"
+        
+        if let time = step.displayTime {
+            response += " This should take about \(time)."
+        }
+        
+        if let technique = step.technique {
+            response += " Remember to use the \(technique) technique."
+        }
+        
+        if let temperature = step.temperature {
+            response += " Keep the heat at \(temperature)."
+        }
+        
+        return response
+    }
+    
+    private func generateTimingResponse(_ step: CookingStep) -> String {
+        if let time = step.displayTime {
+            return "This step should take about \(time). \(step.instruction)"
+        } else {
+            return "No specific timing for this step. Just go by the visual cues I mentioned."
+        }
+    }
+    
+    // MARK: - Text-to-Speech
+    private func speakResponse(_ text: String) {
+        DispatchQueue.main.async {
+            self.botResponse = text
+        }
+        
+        if usePipecat {
+            // TODO: Use Pipecat TTS when available
+            // pipecatClient?.speak(text)
+        } else {
+            speakWithNativeTTS(text)
+        }
+    }
+    
+    private func speakWithNativeTTS(_ text: String) {
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = 0.5 // Slower for cooking instructions
+        utterance.pitchMultiplier = 1.0
+        utterance.volume = 0.8
+        
+        let synthesizer = AVSpeechSynthesizer()
+        synthesizer.speak(utterance)
+        
+        print("🔊 Speaking: \(text)")
     }
 }
 
@@ -197,6 +394,8 @@ enum VoiceError: LocalizedError {
     case speechRecognizerUnavailable
     case recognitionRequestFailed
     case recognitionFailed(String)
+    case pipecatConnectionFailed(String)
+    case pipecatNotConfigured
     
     var errorDescription: String? {
         switch self {
@@ -208,6 +407,10 @@ enum VoiceError: LocalizedError {
             return "Failed to create speech recognition request"
         case .recognitionFailed(let message):
             return "Speech recognition failed: \(message)"
+        case .pipecatConnectionFailed(let message):
+            return "Failed to connect to Pipecat voice service: \(message)"
+        case .pipecatNotConfigured:
+            return "Pipecat voice service is not configured. Add PIPECAT_API_URL to Info.plist"
         }
     }
 }

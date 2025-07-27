@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3D51C1D32E362B080061C454 /* PipecatClientIOS in Frameworks */ = {isa = PBXBuildFile; productRef = 3D51C1D22E362B080061C454 /* PipecatClientIOS */; };
+		3D51C1D62E362B410061C454 /* PipecatClientIOSDaily in Frameworks */ = {isa = PBXBuildFile; productRef = 3D51C1D52E362B410061C454 /* PipecatClientIOSDaily */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		3D51C19A2E35F4780061C454 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +70,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D51C1D62E362B410061C454 /* PipecatClientIOSDaily in Frameworks */,
+				3D51C1D32E362B080061C454 /* PipecatClientIOS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +132,8 @@
 			);
 			name = CookMaa;
 			packageProductDependencies = (
+				3D51C1D22E362B080061C454 /* PipecatClientIOS */,
+				3D51C1D52E362B410061C454 /* PipecatClientIOSDaily */,
 			);
 			productName = CookMaa;
 			productReference = 3D51C18C2E35F4780061C454 /* CookMaa.app */;
@@ -208,6 +217,10 @@
 			);
 			mainGroup = 3D51C1832E35F4780061C454;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3D51C1D12E362B080061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios" */,
+				3D51C1D42E362B410061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios-daily" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3D51C18D2E35F4780061C454 /* Products */;
 			projectDirPath = "";
@@ -579,6 +592,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3D51C1D12E362B080061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pipecat-ai/pipecat-client-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.6;
+			};
+		};
+		3D51C1D42E362B410061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios-daily" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pipecat-ai/pipecat-client-ios-daily.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3D51C1D22E362B080061C454 /* PipecatClientIOS */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D51C1D12E362B080061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios" */;
+			productName = PipecatClientIOS;
+		};
+		3D51C1D52E362B410061C454 /* PipecatClientIOSDaily */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D51C1D42E362B410061C454 /* XCRemoteSwiftPackageReference "pipecat-client-ios-daily" */;
+			productName = PipecatClientIOSDaily;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3D51C1842E35F4780061C454 /* Project object */;
 }
