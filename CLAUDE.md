@@ -32,6 +32,50 @@ iOS displays step text → User says "Hey Kukma, [command]" → Pipecat STT → 
 User says "Hey Kukma, I have a question" → Camera auto-opens → User shows food + asks question → Moondream analyzes image → Gemini contextualizes → Pipecat speaks answer
 ```
 
+## Repository Structure
+
+**CRITICAL: This project uses TWO SEPARATE Git repositories:**
+
+### Main Repository: CookMaa iOS App
+- **Location**: `/Users/sudhanvaacharya/desktop/code projects/cookmaa`
+- **Remote**: `https://github.com/Team-NCP/CookMa.git`
+- **Contains**: 
+  - iOS SwiftUI app (`CookMaa/`, `CookMaaTests/`, `CookMaaUITests/`)
+  - Xcode project files (`CookMaa.xcodeproj/`)
+  - Integration test scripts (`test_*.py`)
+  - This CLAUDE.md file
+- **Git Operations**: Standard git commands from root directory
+
+### Backend Repository: Python Voice Assistant
+- **Location**: `/Users/sudhanvaacharya/desktop/code projects/cookmaa/backend/`
+- **Remote**: `https://github.com/Team-NCP/CookMaa-Backend.git`
+- **Contains**:
+  - Python FastAPI server (`cooking_voice_assistant.py`)
+  - Docker deployment (`Dockerfile`, `railway.json`)
+  - Python dependencies (`requirements.txt`)
+  - Backend documentation (`README.md`)
+- **Git Operations**: Must `cd backend/` before git commands
+
+### Repository Management Rules
+```bash
+# For iOS app changes (main repo)
+git add CookMaa/ CookMaaTests/ *.swift *.py CLAUDE.md
+git commit -m "iOS app changes"
+git push  # pushes to CookMa.git
+
+# For backend changes (backend repo)
+cd backend/
+git add requirements.txt Dockerfile *.py
+git commit -m "Backend changes"
+git push  # pushes to CookMaa-Backend.git
+cd ..
+
+# Railway deploys from: CookMaa-Backend.git
+# iOS app references: CookMa.git
+```
+
+**⚠️ NEVER mix backend and frontend changes in the same commit!**
+
 ## Development Commands
 
 ### Building and Running
